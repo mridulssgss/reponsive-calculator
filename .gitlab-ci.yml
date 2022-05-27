@@ -1,0 +1,18 @@
+image: node:latest
+
+stages:
+  - pages
+
+# must have a stage named 'pages' to publish to gitlab pages
+pages:
+  stage: pages
+  script:
+    - npm install -g elm@latest-0.19.1 --unsafe-perm=true
+    - make all
+
+  artifacts:
+    paths:
+      - public
+
+  only:
+    - main
