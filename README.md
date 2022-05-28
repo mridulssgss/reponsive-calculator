@@ -44,4 +44,7 @@ More tasks will be added as per the need.
     5. When satisfied with the work, create a PR on gitlab and add me as reviewer in the PR.
     6. Merge changes after review.
 
-_Hint_: All tasks need you to change the view functions, please do not modify the other functions in Main.elm
+_Notes_:
+
+1. All tasks need you to change the view functions, please do not modify the other functions in Main.elm
+2. Please use SVG attributes, and not CSS(inline-attributes). I have used them to give border to the calculator, but its not recommended, you can observe the reason by zooming in(Ctrl + in chrome) and zooming out.
