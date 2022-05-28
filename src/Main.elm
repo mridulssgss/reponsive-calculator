@@ -3,8 +3,8 @@ module Main exposing (..)
 import Browser
 import Html as H exposing (Html)
 import Html.Attributes as HA
-import Html.Events as HE
 import View as V
+import View.Attributes as VA
 
 
 type Op
@@ -25,6 +25,7 @@ type alias Model =
     , exp : String
     , postfix : List Term
     , malformed : Bool
+    , showResult : Bool
     }
 
 
@@ -34,6 +35,7 @@ init =
     , exp = ""
     , postfix = []
     , malformed = False
+    , showResult = False
     }
 
 
@@ -168,13 +170,27 @@ evaluate num ( postfix, stack ) =
     Maybe.withDefault 0 (List.head evalStack)
 
 
+
+{-
+   This is the main update function. It functions as follows
+   1. Converts the Infix expression to Postfix expression while the input is being given
+   2. Pops stack and finalises the Postfix expression and then evaluates to show the result.
+-}
+
+
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         Digit d ->
             { model
                 | res = Just (Maybe.withDefault 0 model.res * 10 + d)
-                , exp = model.exp ++ String.fromInt d
+                , exp =
+                    if model.showResult then
+                        String.fromInt (Maybe.withDefault 0 model.res * 10 + d)
+
+                    else
+                        model.exp ++ String.fromInt d
+                , showResult = False
             }
 
         Opertr op ->
@@ -204,6 +220,7 @@ update msg model =
                         | res = Just (evaluate num ( model.postfix, model.stack ))
                         , stack = []
                         , postfix = []
+                        , showResult = True
                     }
 
         AllClear ->
@@ -233,10 +250,18 @@ controls =
 view : Model -> Html Msg
 view model =
     H.div
-        []
-        [ H.textarea [] [ H.text model.exp ]
-        , H.textarea [] [ H.text (String.fromInt (Maybe.withDefault 0 model.res)) ]
-        , V.viewCalc "" " " controls
+        [ HA.style "height" "100%"
+        , HA.style "display" "flex"
+        , HA.style "justify-content" "center"
+        , HA.style "padding" "10px"
+        ]
+        [ V.viewCalc
+            [ VA.width 150
+            , VA.height 160
+            ]
+            model.exp
+            (String.fromInt (Maybe.withDefault 0 model.res))
+            controls
         ]
 
 
