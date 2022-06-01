@@ -286,7 +286,7 @@ viewCalc edits history answer buttons =
             height * sqrt config.noOfButton * 1.2
 
         optionalParameter =
-            { shapeType = "Ellipse", fillColor = Color 147 0 0 }
+            { shapeType = "RoundedBox", fillColor = Color 147 0 0 }
     in
     S.svg
         [ SA.viewBox ("0 0 " ++ String.fromFloat bwidth ++ " " ++ String.fromFloat bheight)
