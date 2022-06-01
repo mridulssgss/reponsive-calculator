@@ -1,4 +1,4 @@
-module View exposing (viewCalc)
+module View exposing (Color(..), colorToString, viewCalc)
 
 import Html exposing (Html)
 import Svg as S exposing (Svg)
@@ -24,15 +24,17 @@ import View.Attributes exposing (Attribute)
 
 
 type alias CalcConfig =
-    { height : Float
-    , width : Float
+    { fontStyle : String
+    , noOfButton : Float
+    , padding : Int
     }
 
 
 defCalcConfig : CalcConfig
 defCalcConfig =
-    { height = 200
-    , width = 200
+    { fontStyle = "Calibri"
+    , noOfButton = 50
+    , padding = 10
     }
 
 
@@ -44,8 +46,55 @@ width =
     30
 
 
-viewButtons : ( Float, Float ) -> String -> msg -> Svg msg
-viewButtons ( x, y ) label msg =
+type Color
+    = Color Int Int Int
+
+
+colorToString : Color -> String
+colorToString color =
+    case color of
+        Color a b c ->
+            "rgb(" ++ String.fromInt a ++ "," ++ String.fromInt b ++ "," ++ String.fromInt c ++ ")"
+
+
+type ButtonType
+    = Rectangle Color
+    | Circle Color
+    | Ellipse Color
+    | RoundedBox Color Int Int
+
+
+genRoundedBox : ( Float, Float ) -> String -> msg -> Color -> Int -> Int -> Svg msg
+genRoundedBox ( x, y ) label msg color rx ry =
+    let
+        ( transX, transY ) =
+            ( x + width / 2, y + height / 2 )
+    in
+    S.g
+        [ SE.onClick msg
+        ]
+        [ S.rect
+            [ SA.x (String.fromFloat x)
+            , SA.y (String.fromFloat y)
+            , SA.height (String.fromFloat height)
+            , SA.width (String.fromFloat width)
+            , SA.rx <| String.fromInt rx
+            , SA.ry <| String.fromInt ry
+            , SA.style <| "fill:" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.fillOpacity "0.5"
+            ]
+            []
+        , S.text_
+            [ SA.textAnchor "middle"
+            , SA.dominantBaseline "central"
+            , SA.transform ("translate(" ++ String.fromFloat transX ++ " " ++ String.fromFloat transY ++ ")")
+            ]
+            [ S.text label ]
+        ]
+
+
+genRectangleButton : ( Float, Float ) -> String -> msg -> Color -> Svg msg
+genRectangleButton ( x, y ) label msg color =
     let
         ( transX, transY ) =
             ( x + width / 2, y + height / 2 )
@@ -59,7 +108,7 @@ viewButtons ( x, y ) label msg =
             , SA.height (String.fromFloat height)
             , SA.width (String.fromFloat width)
             , SA.rx "2"
-            , SA.style "fill:rgb(143 143 237);stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.style <| "fill:" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
             , SA.fillOpacity "0.5"
             ]
             []
@@ -70,6 +119,104 @@ viewButtons ( x, y ) label msg =
             ]
             [ S.text label ]
         ]
+
+
+genCircleButton : ( Float, Float ) -> String -> msg -> Color -> Svg msg
+genCircleButton ( x, y ) label msg color =
+    let
+        ( transX, transY ) =
+            ( x + width / 2, y + height / 2 )
+
+        r =
+            min (width / 2) (height / 2) * 1.2
+    in
+    S.g
+        [ SE.onClick msg
+        ]
+        [ S.circle
+            [ SA.cx (String.fromFloat transX)
+            , SA.cy (String.fromFloat transY)
+            , SA.r (String.fromFloat r)
+            , SA.style <| "fill" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.fillOpacity "0.5"
+            ]
+            []
+        , S.text_
+            [ SA.textAnchor "middle"
+            , SA.dominantBaseline "central"
+            , SA.transform ("translate(" ++ String.fromFloat transX ++ " " ++ String.fromFloat transY ++ ")")
+            ]
+            [ S.text label ]
+        ]
+
+
+genEllipseButton : ( Float, Float ) -> String -> msg -> Color -> Svg msg
+genEllipseButton ( x, y ) label msg color =
+    let
+        ( transX, transY ) =
+            ( x + width / 2, y + height / 2 )
+
+        rx =
+            width / 2
+
+        ry =
+            height / 2
+    in
+    S.g
+        [ SE.onClick msg
+        ]
+        [ S.ellipse
+            [ SA.cx (String.fromFloat transX)
+            , SA.cy (String.fromFloat transY)
+            , SA.rx (String.fromFloat rx)
+            , SA.ry (String.fromFloat ry)
+            , SA.style <| "fill:" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.fillOpacity "0.5"
+            ]
+            []
+        , S.text_
+            [ SA.textAnchor "middle"
+            , SA.dominantBaseline "central"
+            , SA.transform ("translate(" ++ String.fromFloat transX ++ " " ++ String.fromFloat transY ++ ")")
+            ]
+            [ S.text label ]
+        ]
+
+
+returnShapeConfig : { c | shapeType : String, fillColor : Color } -> ButtonType
+returnShapeConfig opParameter =
+    case opParameter.shapeType of
+        "Circle" ->
+            Circle opParameter.fillColor
+
+        "Ellipse" ->
+            Ellipse opParameter.fillColor
+
+        "RoundedBox" ->
+            RoundedBox opParameter.fillColor 10 10
+
+        _ ->
+            Rectangle opParameter.fillColor
+
+
+viewButtons : ( Float, Float ) -> String -> msg -> { a | shapeType : String, fillColor : Color } -> Svg msg
+viewButtons ( x, y ) label msg opParameter =
+    let
+        buttonType =
+            returnShapeConfig opParameter
+    in
+    case buttonType of
+        Circle color ->
+            genCircleButton ( x, y ) label msg color
+
+        RoundedBox color rx ry ->
+            genRoundedBox ( x, y ) label msg color rx ry
+
+        Ellipse color ->
+            genEllipseButton ( x, y ) label msg color
+
+        Rectangle color ->
+            genRectangleButton ( x, y ) label msg color
 
 
 viewDisplay : ( Float, Float ) -> ( Float, Float ) -> String -> Svg msg
@@ -124,23 +271,40 @@ viewCalc edits history answer buttons =
             splitAtEvery cols buttons
 
         coordButtons =
-            getCoordinatedList 50 buttonGroups
+            getCoordinatedList config.noOfButton buttonGroups
 
         maxW =
             (List.maximum (List.map (\( ( x, _ ), _ ) -> x) coordButtons)
                 |> Maybe.withDefault 500
             )
                 + width
+
+        bwidth =
+            width * sqrt config.noOfButton * 0.75
+
+        bheight =
+            height * sqrt config.noOfButton * 1.2
+
+        optionalParameter =
+            { shapeType = "Ellipse", fillColor = Color 147 0 0 }
     in
     S.svg
-        [ SA.viewBox ("0 0 " ++ String.fromFloat config.width ++ " " ++ String.fromFloat config.height)
+        [ SA.viewBox ("0 0 " ++ String.fromFloat bwidth ++ " " ++ String.fromFloat bheight)
         , SA.height "80vh"
-        , SA.style "border-style:solid;padding:10px;"
+        , SA.style
+            ("border-style:solid;"
+                ++ "padding:"
+                ++ String.fromInt config.padding
+                ++ "px;"
+                ++ "font-family:"
+                ++ config.fontStyle
+                ++ "px;"
+            )
         ]
         (viewDisplay ( 0, 0 ) ( maxW, 20 ) history
             :: viewDisplay ( 0, 25 ) ( maxW, 20 ) answer
             :: List.map
-                (\( c, ( l, m ) ) -> viewButtons c l m)
+                (\( c, ( l, m ) ) -> viewButtons c l m optionalParameter)
                 coordButtons
         )
 

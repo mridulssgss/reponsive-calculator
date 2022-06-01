@@ -9,17 +9,17 @@ type alias Attribute c =
 {- Function to set the width attribute of CalcConfig -}
 
 
-width : Float -> Attribute { c | width : Float }
-width f =
+width : Float -> Attribute c
+width _ =
     \cc ->
-        { cc | width = f }
+        cc
 
 
 
 {- Function to set the height attribute of CalcConfig -}
 
 
-height : Float -> Attribute { c | height : Float }
-height f =
+height : Float -> Attribute c
+height _ =
     \cc ->
-        { cc | height = f }
+        cc
