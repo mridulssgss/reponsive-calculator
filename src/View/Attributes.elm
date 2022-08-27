@@ -1,6 +1,8 @@
 module View.Attributes exposing (..)
 
 
+
+
 type alias Attribute c =
     c -> c
 
@@ -23,3 +25,6 @@ height : Float -> Attribute c
 height _ =
     \cc ->
         cc
+
+
+

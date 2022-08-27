@@ -257,7 +257,7 @@ view model =
         ]
         [ V.viewCalc
             [ VA.width 150
-            , VA.height 160
+            , VA.height 200
             ]
             model.exp
             (String.fromInt (Maybe.withDefault 0 model.res))

@@ -1,4 +1,4 @@
-module View exposing (Color(..), colorToString, viewCalc)
+module View exposing (ButtonType(..), colorAttr, shapeAttr, viewCalc)
 
 import Html exposing (Html)
 import Svg as S exposing (Svg)
@@ -38,6 +38,13 @@ defCalcConfig =
     }
 
 
+type ButtonType
+    = Rectangle
+    | Circle
+    | Ellipse
+    | RoundedBox Int Int
+
+
 height =
     20
 
@@ -46,25 +53,30 @@ width =
     30
 
 
-type Color
-    = Color Int Int Int
+type alias ButtonConfig =
+    { shapeType : ButtonType
+    , color : String
+    }
 
 
-colorToString : Color -> String
-colorToString color =
-    case color of
-        Color a b c ->
-            "rgb(" ++ String.fromInt a ++ "," ++ String.fromInt b ++ "," ++ String.fromInt c ++ ")"
+defButtonParameter : ButtonConfig
+defButtonParameter =
+    { shapeType = Rectangle
+    , color = "rgb(147,0,0)"
+    }
 
 
-type ButtonType
-    = Rectangle Color
-    | Circle Color
-    | Ellipse Color
-    | RoundedBox Color Int Int
+shapeAttr : ButtonType -> Attribute { c | shapeType : ButtonType }
+shapeAttr buttonType =
+    \rec -> { rec | shapeType = buttonType }
 
 
-genRoundedBox : ( Float, Float ) -> String -> msg -> Color -> Int -> Int -> Svg msg
+colorAttr : string -> Attribute { c | color : string }
+colorAttr c =
+    \rec -> { rec | color = c }
+
+
+genRoundedBox : ( Float, Float ) -> String -> msg -> String -> Int -> Int -> Svg msg
 genRoundedBox ( x, y ) label msg color rx ry =
     let
         ( transX, transY ) =
@@ -80,7 +92,7 @@ genRoundedBox ( x, y ) label msg color rx ry =
             , SA.width (String.fromFloat width)
             , SA.rx <| String.fromInt rx
             , SA.ry <| String.fromInt ry
-            , SA.style <| "fill:" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.style <| "fill:" ++ color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
             , SA.fillOpacity "0.5"
             ]
             []
@@ -93,7 +105,7 @@ genRoundedBox ( x, y ) label msg color rx ry =
         ]
 
 
-genRectangleButton : ( Float, Float ) -> String -> msg -> Color -> Svg msg
+genRectangleButton : ( Float, Float ) -> String -> msg -> String -> Svg msg
 genRectangleButton ( x, y ) label msg color =
     let
         ( transX, transY ) =
@@ -108,7 +120,7 @@ genRectangleButton ( x, y ) label msg color =
             , SA.height (String.fromFloat height)
             , SA.width (String.fromFloat width)
             , SA.rx "2"
-            , SA.style <| "fill:" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.style <| "fill:" ++ color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
             , SA.fillOpacity "0.5"
             ]
             []
@@ -121,7 +133,7 @@ genRectangleButton ( x, y ) label msg color =
         ]
 
 
-genCircleButton : ( Float, Float ) -> String -> msg -> Color -> Svg msg
+genCircleButton : ( Float, Float ) -> String -> msg -> String -> Svg msg
 genCircleButton ( x, y ) label msg color =
     let
         ( transX, transY ) =
@@ -137,7 +149,7 @@ genCircleButton ( x, y ) label msg color =
             [ SA.cx (String.fromFloat transX)
             , SA.cy (String.fromFloat transY)
             , SA.r (String.fromFloat r)
-            , SA.style <| "fill" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.style <| "fill" ++ color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
             , SA.fillOpacity "0.5"
             ]
             []
@@ -150,7 +162,7 @@ genCircleButton ( x, y ) label msg color =
         ]
 
 
-genEllipseButton : ( Float, Float ) -> String -> msg -> Color -> Svg msg
+genEllipseButton : ( Float, Float ) -> String -> msg -> String -> Svg msg
 genEllipseButton ( x, y ) label msg color =
     let
         ( transX, transY ) =
@@ -170,7 +182,7 @@ genEllipseButton ( x, y ) label msg color =
             , SA.cy (String.fromFloat transY)
             , SA.rx (String.fromFloat rx)
             , SA.ry (String.fromFloat ry)
-            , SA.style <| "fill:" ++ colorToString color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
+            , SA.style <| "fill:" ++ color ++ ";stroke-width:0.5;stroke:rgb(0,0,0)"
             , SA.fillOpacity "0.5"
             ]
             []
@@ -183,40 +195,24 @@ genEllipseButton ( x, y ) label msg color =
         ]
 
 
-returnShapeConfig : { c | shapeType : String, fillColor : Color } -> ButtonType
-returnShapeConfig opParameter =
-    case opParameter.shapeType of
-        "Circle" ->
-            Circle opParameter.fillColor
-
-        "Ellipse" ->
-            Ellipse opParameter.fillColor
-
-        "RoundedBox" ->
-            RoundedBox opParameter.fillColor 10 10
-
-        _ ->
-            Rectangle opParameter.fillColor
-
-
-viewButtons : ( Float, Float ) -> String -> msg -> { a | shapeType : String, fillColor : Color } -> Svg msg
-viewButtons ( x, y ) label msg opParameter =
+viewButtons : List (Attribute ButtonConfig) -> ( Float, Float ) -> String -> msg -> Svg msg
+viewButtons buttonParameters ( x, y ) label msg =
     let
         buttonType =
-            returnShapeConfig opParameter
+            List.foldl (\f a -> f a) defButtonParameter buttonParameters
     in
-    case buttonType of
-        Circle color ->
-            genCircleButton ( x, y ) label msg color
+    case buttonType.shapeType of
+        Circle ->
+            genCircleButton ( x, y ) label msg buttonType.color
 
-        RoundedBox color rx ry ->
-            genRoundedBox ( x, y ) label msg color rx ry
+        RoundedBox rx ry ->
+            genRoundedBox ( x, y ) label msg buttonType.color rx ry
 
-        Ellipse color ->
-            genEllipseButton ( x, y ) label msg color
+        Ellipse ->
+            genEllipseButton ( x, y ) label msg buttonType.color
 
-        Rectangle color ->
-            genRectangleButton ( x, y ) label msg color
+        Rectangle ->
+            genRectangleButton ( x, y ) label msg buttonType.color
 
 
 viewDisplay : ( Float, Float ) -> ( Float, Float ) -> String -> Svg msg
@@ -285,8 +281,8 @@ viewCalc edits history answer buttons =
         bheight =
             height * sqrt config.noOfButton * 1.2
 
-        optionalParameter =
-            { shapeType = "RoundedBox", fillColor = Color 147 0 0 }
+        buttonConfig =
+            [ shapeAttr (RoundedBox 10 10), colorAttr "rgb(146,0, 0)" ]
     in
     S.svg
         [ SA.viewBox ("0 0 " ++ String.fromFloat bwidth ++ " " ++ String.fromFloat bheight)
@@ -304,7 +300,7 @@ viewCalc edits history answer buttons =
         (viewDisplay ( 0, 0 ) ( maxW, 20 ) history
             :: viewDisplay ( 0, 25 ) ( maxW, 20 ) answer
             :: List.map
-                (\( c, ( l, m ) ) -> viewButtons c l m optionalParameter)
+                (\( c, ( l, m ) ) -> viewButtons buttonConfig c l m)
                 coordButtons
         )
 
